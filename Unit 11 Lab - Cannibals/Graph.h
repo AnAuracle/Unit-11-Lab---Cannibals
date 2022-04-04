@@ -29,7 +29,7 @@ public:
 	bool isEdge(Type, Type);
 	friend ostream& operator << <>(ostream & out, const Graph<Type> &g);
 	vector<Type>getPath(Type, Type);
-	void getPath(Type source, Type dest, vector<Type>sol, vector<vector<Type>>& possibleSolutions, shared_ptr<bool[]> visited);
+	void getPath(Type source, Type dest, vector<Type>sol, vector<vector<Type>>& possibleSolutions);
 };
 
 
@@ -142,72 +142,42 @@ ostream& operator << (ostream & out, const Graph<Type> &g) {
 
 template <typename Type>
 vector<Type> Graph<Type>::getPath(Type source, Type dest) {
-	vector<Type> solution; 
-	//bool* visited = new bool[getNumVertices()];
-	shared_ptr<bool[]> visited(new bool[getNumVertices()]);
-	for (int i = 0; i < getNumVertices(); i++) {
-		visited[i] = false;
-	}
-	solution.push_back(source);
-	if (source == dest) {
-		return solution;
-	}
-	else if (isEdge(source, dest)) {
+	int sourceIdx = getVertexPos(source);
+	vector<Type> solution;
+	vector<vector<Type>> possibleSolutions;
+	if (isEdge(source, dest)) {
+		solution.push_back(source);
 		solution.push_back(dest);
-		return solution;
 	}
-	getPath(source, dest, solution, visited);
-	reverse(solution.begin() + 1, solution.end());
-	solution.push_back(dest);
+
+	for (int i = 0; i < edges[sourceIdx].size(); i++) {
+		getPath(source, dest, solution, possibleSolutions);
+	}
+	for (int i = 0; i < possibleSolutions.size(); i++) {
+		if (solution.size() == 0) {
+			solution = possibleSolutions[i];
+		}
+		else if (solution.size() > possibleSolutions[i].size()) {
+			solution = possibleSolutions[i];
+		}
+	}
 	return solution;
 }
 
 template <typename Type>
-void Graph<Type>::getPath(Type source, Type dest, vector<Type>sol, vector<vector<Type>>& possibleSolutions, shared_ptr<bool[]> visited) {
+void Graph<Type>::getPath(Type source, Type dest, vector<Type>sol, vector<vector<Type>>& possibleSolutions) {
+	sol.push_back(source);
 	int sourceIdx = getVertexPos(source);
-	vector<Type> testVect;
-	testVect = sol;
-	for (unsigned int i = 0; i < edges[sourceIdx].size(); i++) {
-			if (isEdge(edges[sourceIdx][i], dest)) {
-				sol.push_back(edges[sourceIdx][i]);
-				return;
-			}
-		visited[getVertexPos(edges[sourceIdx][i])] = true;
-	}
+	for (int i = 0; i < edges[sourceIdx].size(); i++) {
 
-	for (unsigned int i = 0; i < edges[sourceIdx].size(); i++) {
-		int newIdx = getVertexPos(edges[sourceIdx][i]);
-		for (unsigned int j = 0; j < edges[newIdx].size(); j++) {
-			if (!visited[getVertexPos(edges[newIdx][j])]) {
-				getPath(edges[sourceIdx][i], dest, sol, visited);
-				if (sol.size() != testVect.size()) {
-					sol.push_back(edges[sourceIdx][i]);
-					return;
-				}
-			}
-		}
-		
-		/*if (sol.size() != testVect.size()) {
+		if (edges[sourceIdx][i] == dest) {
 			sol.push_back(edges[sourceIdx][i]);
+			possibleSolutions.push_back(sol);
 			return;
-		}*/
-	}
-
-	/*for (unsigned int i = 0; i < edges[sourceIdx].size(); i++) {
-		if (!visited[getVertexPos(edges[sourceIdx][i])]) {
-			visited[getVertexPos(edges[sourceIdx][i])] = true;
-			if (isEdge(edges[sourceIdx][i], dest)) {
-				sol.push_back(edges[sourceIdx][i]);
-				return;
-			}
-			else {
-				getPath(edges[sourceIdx][i], dest, sol, visited);
-				if (sol.size() != testVect.size()) {
-					sol.push_back(edges[sourceIdx][i]);
-					return;
-				}
-			}
 		}
-	}*/
+		if (find(begin(sol), end(sol), edges[sourceIdx][i]) == end(sol)) {
+			getPath(edges[sourceIdx][i], dest, sol, possibleSolutions);
+		}
+	}
 }
 
